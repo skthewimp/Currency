@@ -10,13 +10,28 @@ probsExp <- function(maxamount, meanamount)
   return(probs)
 }
 
-distrib <- function(maxamount, meantrans, coins)
+probsPowerLaw <- function(maxamount, meanamount, threshold, alpha) 
+# assume that the amount follows a power law distribution with lower threshold <threshold> and exponent
+# alpha. The average value is meanamount. This returns probabilities of every rupee value between threshold and
+# maxamount
+  
+{
+  lbounds <- 1 -  ((threshold:maxamount - 0.5)/threshold)^(-alpha)
+  ubounds <- 1 -  ((threshold:maxamount + 0.5)/threshold)^(-alpha)
+  probs <- ubounds - lbounds
+  probs <- probs/sum(probs)
+  return(probs)
+}
+
+distrib <- function(maxamount, meantrans, coins, alpha)
   # given a maximum amount to transact, and a mean transaction value, calculate the relative use of 
   # different currencies
 {
+  threshold <- round(meantrans * (alpha-1)/alpha)
+  print(threshold)
   amt <- mincoinsDijkstra(maxamount, coins) # number of coins for each transaction amount
-  amt <- amt[amt$Amount <= maxamount,]
-  amt$Prob <- probsExp(maxamount,meantrans) # assume an exponential distribution in probaibility
+  amt <- amt[amt$Amount <= maxamount & amt$Amount >= threshold,]
+  amt$Prob <- probsPowerLaw(maxamount,meantrans,threshold,alpha) # assume an exponential distribution in probaibility
   
   # next few lines of code are to determine the number of coins of each type in the optimal path for each
   # amount 
